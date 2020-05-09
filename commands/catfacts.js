@@ -2,26 +2,57 @@ module.exports = {
 	name: '!catfacts',
 	description: 'catfacts!',
 	execute(msg, args) {
-
-
-	
-	msg.reply(getCatFact());
-        //msg.channel.send('Got here');
+		msg.reply(getCatFact());
 	},
 };
 
-const getCatFact = () => {
-	// Pick a random number
-	var len = catFactslist.length;
-	var rando = Math.floor(Math.random() * len);
-	//console.log('got to CatFact',rando, catFactslist[rando]);
-	return catFactslist[rando];
+// Everything should still work the way it worked before.
+// To try out the new API, change config.api to 'ninja'
+const config = {api: 'local'};
+const http = require('http');
 
+const getCatFact = () => {
+	
+	switch (config.api) {
+		case 'local':
+			return catFactslist[Math.floor(Math.random() * catFactslist.length)];
+		
+		case 'ninja':
+			// send an http request to catfact.ninja/fact
+			// grab the body, JSON parse it, and the fact is body.fact
+
+			const options = {
+				hostname: 'catfact.ninja',
+				path: '/fact',
+				method: 'GET'
+			}
+
+			let fact = '';
+
+			const req = http.request(options, res => {
+				if (res.statusCode != ('404' || '301')) {
+					res.on('data', d => {
+						fact = JSON.parse(d).fact;
+					});
+				} else {
+					fact = 'There was an error getting a fact from catfact.ninja';
+				}
+			});
+			
+			req.on('error', error => {
+				console.error(error);
+			});
+			
+			req.end();
+
+			return fact;
+	}
+	
 }
 
 
-
-
+// time for me to make a catfacts api?
+// ooo, it's already been done (duh): catfact.ninja/fact
 var catFactslist = [
 "Ginger tabby cats can have freckles around their mouths and on their eyelids!"
 ,"A cat has the power to sometimes heal themselves by purring."
@@ -41,6 +72,3 @@ var catFactslist = [
 ,"Abraham Lincoln was a huge fan of cats"
 ,"'ailurophile' is a fancy word for \"cat lover\""
 ];
-
-//console.log(getCatFact());
-
